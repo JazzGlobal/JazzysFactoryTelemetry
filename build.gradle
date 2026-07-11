@@ -26,6 +26,10 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven {
+        name = "ModMaven"
+        url = "https://modmaven.dev/"
+    }
+    maven {
         name = 'GTCEu Maven'
         url = 'https://maven.gtceu.com'
         content {
