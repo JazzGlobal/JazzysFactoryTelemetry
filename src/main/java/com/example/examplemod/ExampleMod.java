@@ -1,5 +1,6 @@
 package com.example.examplemod;
 
+import com.example.examplemod.blocks.TelemetryNodeBlock;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent;
@@ -35,8 +36,8 @@ public class ExampleMod {
     public static final String MOD_ID = "examplemod";
     public static final Logger LOGGER = LogManager.getLogger();
     public static GTRegistrate EXAMPLE_REGISTRATE = GTRegistrate.create(ExampleMod.MOD_ID);
-    public static final BlockEntry<Block> TELEMETRY_NODE = EXAMPLE_REGISTRATE
-            .block("telemetry_node", Block::new)
+    public static final BlockEntry<TelemetryNodeBlock> TELEMETRY_NODE = EXAMPLE_REGISTRATE
+            .block("telemetry_node", TelemetryNodeBlock::new)
             .properties(properties -> properties.strength(2.0f)
             )
             .item()
