@@ -10,15 +10,21 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import com.gregtechceu.gtceu.api.sound.SoundEntry;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-
+import com.tterrag.registrate.util.entry.BlockEntry;
+import net.minecraft.world.level.block.Block;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,8 +35,18 @@ public class ExampleMod {
     public static final String MOD_ID = "examplemod";
     public static final Logger LOGGER = LogManager.getLogger();
     public static GTRegistrate EXAMPLE_REGISTRATE = GTRegistrate.create(ExampleMod.MOD_ID);
+    public static final BlockEntry<Block> TELEMETRY_NODE = EXAMPLE_REGISTRATE
+            .block("telemetry_node", Block::new)
+            .properties(properties -> properties.strength(2.0f)
+            )
+            .item()
+            .build()
+            .register();
 
     public ExampleMod() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("REGISTRATE VALUE: " + BuiltInRegistries.BLOCK);
+        }));
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modEventBus.addListener(this::commonSetup);
