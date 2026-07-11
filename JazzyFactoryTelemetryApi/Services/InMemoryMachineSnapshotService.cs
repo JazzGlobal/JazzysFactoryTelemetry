@@ -11,6 +11,12 @@ public class InMemoryMachineSnapshotService : IMachineSnapshotService
         return Task.CompletedTask;
     }
 
+    public Task CreateMachineSnapshotsAsync(List<MachineSnapshot> snapshots)
+    {
+        _snapshots.AddRange(snapshots);
+        return Task.CompletedTask;
+    }
+
     public Task<List<MachineSnapshot>> GetLatestMachineSnapshotsAsync()
     {
         return Task.FromResult(_snapshots);

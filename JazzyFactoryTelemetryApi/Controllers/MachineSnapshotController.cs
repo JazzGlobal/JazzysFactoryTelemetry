@@ -30,4 +30,12 @@ public class MachineSnapshotController : ControllerBase
         await _machineSnapshotService.CreateMachineSnapshotAsync(snapshot);
         return Ok();
     }
+
+    [HttpPost("batch")]
+    public async Task<IActionResult> CreateMachineSnapshots(List<MachineSnapshot> snapshots)
+    {
+        // Logic to create multiple machine snapshots
+        await _machineSnapshotService.CreateMachineSnapshotsAsync(snapshots);
+        return Ok();
+    }
 }
