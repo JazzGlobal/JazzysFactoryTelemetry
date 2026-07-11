@@ -1,6 +1,7 @@
 package com.example.examplemod.blocks;
 
 import com.example.examplemod.ExampleMod;
+import com.example.examplemod.http.TelemetryApiClient;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
@@ -71,6 +72,7 @@ public class TelemetryNodeBlock extends Block {
         super.tick(state, level, pos, random);
 
         List<RelativeBlock> adjacentBlocks = GetAdjacentBlocks(this, pos, level);
+        List<MachineSnapshot> snapshots = new ArrayList<>();
         for (RelativeBlock block : adjacentBlocks)
         {
             System.out.println("Adjacent Block for " + block.direction.name() + ": " + block.blockEntity.getBlockState().getBlock().getName());
@@ -88,8 +90,12 @@ public class TelemetryNodeBlock extends Block {
                         "Is Active: " + snapshot.poweredOn + "\n" +
                         "Timestamp: " + snapshot.observedAt.toString() + "\n"
                 );
+                snapshots.add(snapshot);
             }
         }
+
+        TelemetryApiClient client = new TelemetryApiClient();
+        client.sendSnapshot(snapshots);
 
         // TODO: delay should be configurable and should match the onPlace override's first tick
         level.scheduleTick(pos, this, 200);
