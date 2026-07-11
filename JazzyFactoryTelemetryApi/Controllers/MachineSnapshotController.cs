@@ -15,15 +15,15 @@ public class MachineSnapshotController : ControllerBase
         _machineSnapshotService = machineSnapshotService;
     }
 
-    [HttpGet("/api/machine-snapshots/latest")]
-    public async Task<IActionResult> GetLatestMachineSnapshots()
+    [HttpGet]
+    public async Task<IActionResult> GetMachineSnapshots()
     {
         var snapshots = await _machineSnapshotService.GetLatestMachineSnapshotsAsync();
         return Ok(snapshots);
     }
 
-    [HttpPost("/api/machine-snapshots")]
-    public async Task<IActionResult> CreateMachineSnapshot([FromBody] MachineSnapshot snapshot)
+    [HttpPost]
+    public async Task<IActionResult> CreateMachineSnapshot(MachineSnapshot snapshot)
     {
         // Logic to create a new machine snapshot
         // This could involve calling a service method to save the snapshot to a database
