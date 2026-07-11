@@ -84,9 +84,9 @@ public class TelemetryNodeBlock extends Block {
                 );
                 System.out.println(
                         "Machine ID: " + snapshot.machineId + "\n" +
-                        "Machine Name" + snapshot.machineType + "\n" +
-                        "Is Active" + snapshot.poweredOn + "\n" +
-                        "Timestamp" + snapshot.observedAt.toString() + "\n"
+                        "Machine Name: " + snapshot.machineType + "\n" +
+                        "Is Active: " + snapshot.poweredOn + "\n" +
+                        "Timestamp: " + snapshot.observedAt.toString() + "\n"
                 );
             }
         }
