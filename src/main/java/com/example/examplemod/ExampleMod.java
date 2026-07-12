@@ -1,5 +1,6 @@
 package com.example.examplemod;
 
+import com.example.examplemod.blocks.TelemetryBlockEntity;
 import com.example.examplemod.blocks.TelemetryNodeBlock;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent;
@@ -10,6 +11,7 @@ import com.gregtechceu.gtceu.api.recipe.GTRecipeType;
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import com.gregtechceu.gtceu.api.sound.SoundEntry;
 
+import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -43,6 +45,14 @@ public class ExampleMod {
             .item()
             .build()
             .register();
+    public static final BlockEntityEntry<TelemetryBlockEntity> TELEMETRY_NODE_BLOCK_ENTITY =
+            EXAMPLE_REGISTRATE
+                    .blockEntity(
+                            "telemetry_node",
+                            TelemetryBlockEntity::new
+                    )
+                    .validBlock(TELEMETRY_NODE)
+                    .register();
 
     public ExampleMod() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

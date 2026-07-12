@@ -14,19 +14,26 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 
+public class TelemetryNodeBlock extends BaseEntityBlock {
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
+        return new TelemetryBlockEntity(ExampleMod.TELEMETRY_NODE_BLOCK_ENTITY.get(), blockPos, blockState);
+    }
 
-public class TelemetryNodeBlock extends Block {
     // TODO: These records probably shouldn't be in this class.
     public record RelativeBlock(BlockEntity blockEntity, Direction direction) {}
     public record MachineSnapshot(
@@ -50,7 +57,9 @@ public class TelemetryNodeBlock extends Block {
         BlockHitResult hit
     )
     {
-        var msg = player.getDisplayName().getString() + " Interacted with " + state.getBlock().getName().getString() + "!";
+        TelemetryBlockEntity telemetryBlockEntity = (TelemetryBlockEntity)level.getBlockEntity(pos);
+
+        var msg = player.getDisplayName().getString() + " Interacted with " + telemetryBlockEntity.Name + "!";
         System.out.println(msg);
         player.sendSystemMessage(Component.literal(msg));
         return InteractionResult.sidedSuccess(level.isClientSide);
@@ -59,6 +68,14 @@ public class TelemetryNodeBlock extends Block {
     // Schedule our very first tick to initiate adjacent block polling.
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        // Generate UUID for ID.
+        UUID uuid = UUID.randomUUID();
+        TelemetryBlockEntity telemetryBlockEntity  = (TelemetryBlockEntity)level.getBlockEntity(pos);
+        if (telemetryBlockEntity instanceof TelemetryBlockEntity){
+            telemetryBlockEntity.UUID = uuid.toString();
+            telemetryBlockEntity.Name = uuid.toString() + ": Telemetry Block";
+        }
+
         if (!level.isClientSide)
         {
             // TODO: delay should be configurable and should match the tick override's delay.
