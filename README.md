@@ -1,5 +1,16 @@
-# Jazzy's Factory Telemetry
-Welcome! 🤖 This is a mod I put together to assist my Minecraft factory building. To be honest, setup is a bit convoluted and requires some technical know-how.
+# Overview
+Welcome! 🤖 This is a group of applications + a Minecraft Mod I put together with the intent to provide historical data and pseudo-realtime factory insights when using GregTech Machines. There are three different pieces: 
+
+
+
+## Jazzy's Factory Telemetry
+W assist my Minecraft factory building. Essentially, the mod adds a new block, the Telemetry Node. When networked with GregTech machines, the Telemetry Node will transmit telemetry data to an external service. This service can be configured to grant persistence to the data for factory insights.
+
+## Jazzy's Factory Telemetry API
+This is the super nifty service layer that the actual Minecraft mod sends the data to. It is stood up with a database to provide data persistence to all consuming applications. The Jazzy's Factory Telemetry API is its own application
+
+## Jazzy's Factory Telemetry Dashboard
+This is the fun part that you'll actually interact with outside of Minecraft! This ap
 
 ## Telemetry Flow
 A Telemetry Node without linked machines is intentionally idle. Once at least one supported machine is linked, the node periodically generates MachineSnapshots, enqueues them, and they are asynchronously persisted by the API.
