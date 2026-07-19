@@ -31,6 +31,7 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
     // TODO: These records probably shouldn't be in this class.
     public record RelativeBlock(BlockEntity blockEntity, Direction direction) {}
     public record MachineSnapshot(
+            String telemetryNodeId,
             String machineId,
             String machineType,
             boolean poweredOn,
@@ -105,12 +106,14 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
             if (block.blockEntity instanceof MetaMachineBlockEntity machineTile) {
                 MetaMachine machine = machineTile.getMetaMachine();
                 MachineSnapshot snapshot = new MachineSnapshot(
+                        telemetryNodeBlockEntity.getNodeId().toString(),
                         machine.getDefinition().getId().toString(),
                         machine.getDefinition().getName(),
                         isMachineActive(machine),
                         Instant.now()
                 );
                 System.out.println(
+                        "Telemetry Node ID: " + snapshot.telemetryNodeId + "\n" +
                         "Machine ID: " + snapshot.machineId + "\n" +
                         "Machine Name: " + snapshot.machineType + "\n" +
                         "Is Active: " + snapshot.poweredOn + "\n" +
