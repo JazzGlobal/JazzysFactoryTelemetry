@@ -8,6 +8,7 @@ import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -30,8 +31,13 @@ import java.util.List;
 public class TelemetryNodeBlock extends BaseEntityBlock {
     // TODO: These records probably shouldn't be in this class.
     public record RelativeBlock(BlockEntity blockEntity, Direction direction) {}
-    public record MachineSnapshot(
+    public record MinimizedBlockPos(int x, int y, int z) {}
+    public record TelemetryNode(
             String telemetryNodeId,
+            List<MinimizedBlockPos> linkedMachines
+    ) {}
+    public record MachineSnapshot(
+            TelemetryNode telemetryNode,
             String machineId,
             String machineType,
             boolean poweredOn,
@@ -95,25 +101,30 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
             return;
         }
 
-        System.out.println("Telemetry Node UUID: " + telemetryNodeBlockEntity.getNodeId());
-
-
-        List<RelativeBlock> adjacentBlocks = getAdjacentBlocks(pos, level);
+        // Get list of Block Entities from the Telemetry Node Entity's Stored Linked Machines.
         List<MachineSnapshot> snapshots = new ArrayList<>();
-        for (RelativeBlock block : adjacentBlocks)
+        List<MinimizedBlockPos> linkedMachineCoordinates = telemetryNodeBlockEntity.getLinkedMachinesMinimized();
+        for (MinimizedBlockPos minimizedPos : linkedMachineCoordinates) 
         {
-            System.out.println("Adjacent Block for " + block.direction.name() + ": " + block.blockEntity.getBlockState().getBlock().getName());
-            if (block.blockEntity instanceof MetaMachineBlockEntity machineTile) {
+            BlockPos machinePos = new BlockPos(new Vec3i(minimizedPos.x, minimizedPos.y, minimizedPos.z));
+            BlockEntity machineBlockEntity = level.getBlockEntity(machinePos);
+
+            System.out.println("Linked Machine at: " + machinePos);
+            if (machineBlockEntity instanceof MetaMachineBlockEntity machineTile) {
                 MetaMachine machine = machineTile.getMetaMachine();
-                MachineSnapshot snapshot = new MachineSnapshot(
+                TelemetryNode telemetryNode = new TelemetryNode(
                         telemetryNodeBlockEntity.getNodeId().toString(),
+                        telemetryNodeBlockEntity.getLinkedMachinesMinimized()
+                );
+                MachineSnapshot snapshot = new MachineSnapshot(
+                        telemetryNode,
                         machine.getDefinition().getId().toString(),
                         machine.getDefinition().getName(),
                         isMachineActive(machine),
                         Instant.now()
                 );
                 System.out.println(
-                        "Telemetry Node ID: " + snapshot.telemetryNodeId + "\n" +
+                        "Telemetry Node ID: " + snapshot.telemetryNode().telemetryNodeId() + "\n" +
                         "Machine ID: " + snapshot.machineId + "\n" +
                         "Machine Name: " + snapshot.machineType + "\n" +
                         "Is Active: " + snapshot.poweredOn + "\n" +
@@ -127,21 +138,7 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
         client.sendSnapshot(snapshots);
 
         // TODO: delay should be configurable and should match the onPlace override's first tick
-        level.scheduleTick(pos, this, 200);
-    }
-
-    private List<RelativeBlock> getAdjacentBlocks(BlockPos pos, ServerLevel level)
-    {
-        List<RelativeBlock> relativeBlocks = new ArrayList<>();
-        for (Direction direction : Direction.values())
-        {
-            BlockPos adjacentPos = pos.relative(direction);
-            BlockEntity blockEntity = level.getBlockEntity(adjacentPos);
-            if (blockEntity != null)
-                relativeBlocks.add(new RelativeBlock(blockEntity, direction));
-        }
-
-        return relativeBlocks;
+        level.scheduleTick(pos, this, ((TelemetryBlockEntity) blockEntity).getPollRateTicks());
     }
 
     public boolean isMachineActive(MetaMachine machine)

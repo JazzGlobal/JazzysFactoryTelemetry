@@ -1,0 +1,116 @@
+package com.example.examplemod.items;
+
+import com.example.examplemod.entities.TelemetryBlockEntity;
+import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
+import com.gregtechceu.gtceu.api.machine.MetaMachine;
+import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
+import com.gregtechceu.gtceu.api.machine.WorkableTieredMachine;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.entity.BlockEntity;
+
+public class TelemetryLinkingTool extends Item {
+    private static final String SELECTED_NODE_POS_TAG = "SelectedNodePos";
+    private BlockPos selectedNodePos; 
+
+    /*
+        On use:
+    clickedBlockEntity = level.getBlockEntity(clickedPos)
+
+    if clickedBlockEntity is TelemetryBlockEntity:
+        store node dimension + position in tool NBT
+        return success
+
+    if clickedBlockEntity is MetaMachineBlockEntity:
+        if tool has no selected node:
+            show "Select a Telemetry Node first"
+            return fail
+
+        resolve selected node from stored dimension + position
+
+        if selected node no longer exists:
+            clear tool selection
+            show "Selected Telemetry Node no longer exists"
+            return fail
+
+        selectedNode.addLinkedMachine(machine dimension + position)
+        return success
+
+    otherwise:
+        do nothing
+    */
+   
+    public TelemetryLinkingTool(Properties properties) {
+        super(properties);
+    }
+    
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        // Handle right-click on a block
+        ItemStack stack = context.getItemInHand();
+        BlockEntity blockEntity = context.getLevel().getBlockEntity(context.getClickedPos());
+        
+        // If the selected block is a TelemetryBlockEntity, store its position in the tool's NBT.
+        if (blockEntity instanceof TelemetryBlockEntity telemetryBlockEntity) {
+            CompoundTag tag = stack.getTagElement(SELECTED_NODE_POS_TAG);
+            if (tag == null) {
+                tag = new CompoundTag();
+                stack.addTagElement(SELECTED_NODE_POS_TAG, tag);
+            }
+            tag.putLong("SelectedNodePos", telemetryBlockEntity.getBlockPos().asLong());
+        }
+
+        // If the selected block is a MetaMachineBlockEntity, handle linking with the selected Telemetry node.
+        if (blockEntity instanceof MetaMachineBlockEntity metaMachineBlockEntity) {
+
+            if (!SupportsRecipeTelemetry(metaMachineBlockEntity))
+            {
+                // TODO: getting the player from context + sending a message belongs in a helper.
+                Player player = context.getPlayer();
+                if (player != null) {
+                    player.displayClientMessage(Component.literal("This machine does not support telemetry"), true);
+                }
+                return InteractionResult.FAIL;
+            }
+
+            CompoundTag tag = stack.getTagElement(SELECTED_NODE_POS_TAG);
+            if (tag == null) {
+                // No selected node, show message and return fail
+                // TODO: getting the player from context + sending a message belongs in a helper.
+                Player player = context.getPlayer();
+                if (player != null) {
+                    player.displayClientMessage(Component.literal("Select a Telemetry Node first"), true);
+                }
+                return InteractionResult.FAIL;
+            }
+
+            BlockPos selectedNodePos = BlockPos.of(tag.getLong("SelectedNodePos"));
+            TelemetryBlockEntity selectedNode = (TelemetryBlockEntity) context.getLevel().getBlockEntity(selectedNodePos);
+            if (selectedNode == null) {
+                // Selected node no longer exists, clear tool selection and show message
+                stack.removeTagKey(SELECTED_NODE_POS_TAG);
+                // TODO: getting the player from context + sending a message belongs in a helper.
+                Player player = context.getPlayer();
+                if (player != null) {
+                    player.displayClientMessage(Component.literal("Selected Telemetry Node no longer exists"), true);
+                }
+                return InteractionResult.FAIL;
+            }
+            selectedNode.addLinkedMachine(metaMachineBlockEntity.getBlockPos().asLong(), context);
+        }
+
+        return InteractionResult.SUCCESS;
+    }
+
+    public static boolean SupportsRecipeTelemetry(MetaMachineBlockEntity blockEntity) {
+        MetaMachine machine = blockEntity.getMetaMachine();
+        return machine instanceof WorkableTieredMachine;
+    }
+}

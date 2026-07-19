@@ -2,6 +2,7 @@ package com.example.examplemod;
 
 import com.example.examplemod.blocks.TelemetryNodeBlock;
 import com.example.examplemod.entities.TelemetryBlockEntity;
+import com.example.examplemod.items.TelemetryLinkingTool;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent;
@@ -26,6 +27,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.tterrag.registrate.util.entry.BlockEntry;
+import com.tterrag.registrate.util.entry.ItemEntry;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 
 import net.minecraft.world.level.block.Block;
@@ -55,6 +57,10 @@ public class ExampleMod {
             .validBlock(TELEMETRY_NODE)
             .register();
 
+    public static final ItemEntry<TelemetryLinkingTool> TELEMETRY_LINKING_TOOL = EXAMPLE_REGISTRATE
+            .item("telemetry_linking_tool", TelemetryLinkingTool::new)
+            .register();
+    
     public ExampleMod() {
         
         // Register the server configuration
