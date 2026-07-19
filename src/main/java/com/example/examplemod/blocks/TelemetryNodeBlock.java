@@ -72,8 +72,13 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         if (!level.isClientSide)
         {
-            // TODO: delay should be configurable and should match the tick override's delay.
-            level.scheduleTick(pos, this, 200);
+            // Retrieve the block entity to access its poll rate
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof TelemetryBlockEntity telemetryNodeBlockEntity) {
+                int pollRateTicks = telemetryNodeBlockEntity.getPollRateTicks();
+                // You can use pollRateTicks as needed
+                level.scheduleTick(pos, this, pollRateTicks);
+            }
         }
     }
 

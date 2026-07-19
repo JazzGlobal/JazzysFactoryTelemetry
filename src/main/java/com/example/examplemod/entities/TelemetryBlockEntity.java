@@ -7,6 +7,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
+import com.example.examplemod.config.TelemetryServerConfig;
+
 import java.util.UUID;
 
 public class TelemetryBlockEntity extends BlockEntity {
@@ -26,7 +28,10 @@ public class TelemetryBlockEntity extends BlockEntity {
         super(type, pos, blockState);
 
         this.nodeId = UUID.randomUUID();
-        this.pollRateTicks = 5; // TODO: Replace with server default tick rate
+
+        this.pollRateTicks = TelemetryServerConfig.DEFAULT_POLL_RATE_TICKS.get();
+        // Ensure the poll rate is not below the minimum allowed by the server configuration
+        this.pollRateTicks = Math.max(this.pollRateTicks, TelemetryServerConfig.MINIMUM_POLL_RATE_TICKS.get());
     }
 
     @Override

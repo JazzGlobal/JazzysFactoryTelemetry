@@ -31,6 +31,9 @@ import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import net.minecraft.world.level.block.Block;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.example.examplemod.config.TelemetryServerConfig;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 
 @Mod(ExampleMod.MOD_ID)
 @SuppressWarnings("removal")
@@ -53,6 +56,10 @@ public class ExampleMod {
             .register();
 
     public ExampleMod() {
+        
+        // Register the server configuration
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, TelemetryServerConfig.SERVER_CONFIG);
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("REGISTRATE VALUE: " + BuiltInRegistries.BLOCK);
         }));
