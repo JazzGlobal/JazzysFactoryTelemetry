@@ -1,6 +1,7 @@
 package com.example.examplemod.blocks;
 
 import com.example.examplemod.ExampleMod;
+import com.example.examplemod.entities.TelemetryBlockEntity;
 import com.example.examplemod.http.TelemetryApiClient;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -14,19 +15,19 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
-public class TelemetryNodeBlock extends Block {
+public class TelemetryNodeBlock extends BaseEntityBlock {
     // TODO: These records probably shouldn't be in this class.
     public record RelativeBlock(BlockEntity blockEntity, Direction direction) {}
     public record MachineSnapshot(
@@ -38,6 +39,16 @@ public class TelemetryNodeBlock extends Block {
 
     public TelemetryNodeBlock(BlockBehaviour.Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return ExampleMod.TELEMETRY_BLOCK_ENTITY_BLOCK_ENTITY_ENTRY.create(pos, state);
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
     }
 
     @Override
@@ -71,7 +82,17 @@ public class TelemetryNodeBlock extends Block {
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         super.tick(state, level, pos, random);
 
-        List<RelativeBlock> adjacentBlocks = GetAdjacentBlocks(this, pos, level);
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!(blockEntity instanceof TelemetryBlockEntity telemetryNodeBlockEntity)) {
+            ExampleMod.LOGGER.warn("Telemetry node at {} is missing its block entity", pos);
+            level.scheduleTick(pos, this, 200);
+            return;
+        }
+
+        System.out.println("Telemetry Node UUID: " + telemetryNodeBlockEntity.getNodeId());
+
+
+        List<RelativeBlock> adjacentBlocks = getAdjacentBlocks(pos, level);
         List<MachineSnapshot> snapshots = new ArrayList<>();
         for (RelativeBlock block : adjacentBlocks)
         {
@@ -101,7 +122,7 @@ public class TelemetryNodeBlock extends Block {
         level.scheduleTick(pos, this, 200);
     }
 
-    private List<RelativeBlock> GetAdjacentBlocks(TelemetryNodeBlock block, BlockPos pos, ServerLevel level)
+    private List<RelativeBlock> getAdjacentBlocks(BlockPos pos, ServerLevel level)
     {
         List<RelativeBlock> relativeBlocks = new ArrayList<>();
         for (Direction direction : Direction.values())

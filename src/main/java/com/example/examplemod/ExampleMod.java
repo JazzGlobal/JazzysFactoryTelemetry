@@ -1,6 +1,7 @@
 package com.example.examplemod;
 
 import com.example.examplemod.blocks.TelemetryNodeBlock;
+import com.example.examplemod.entities.TelemetryBlockEntity;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent;
@@ -25,6 +26,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.tterrag.registrate.util.entry.BlockEntry;
+import com.tterrag.registrate.util.entry.BlockEntityEntry;
+
 import net.minecraft.world.level.block.Block;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,6 +45,11 @@ public class ExampleMod {
             )
             .item()
             .build()
+            .register();
+    public static final BlockEntityEntry<TelemetryBlockEntity> TELEMETRY_BLOCK_ENTITY_BLOCK_ENTITY_ENTRY = EXAMPLE_REGISTRATE
+            .blockEntity("telemetry_node", TelemetryBlockEntity::new
+            )
+            .validBlock(TELEMETRY_NODE)
             .register();
 
     public ExampleMod() {
