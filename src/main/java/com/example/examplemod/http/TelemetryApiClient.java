@@ -14,6 +14,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public final class TelemetryApiClient {
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
@@ -31,7 +32,7 @@ public final class TelemetryApiClient {
             )
             .create();
 
-    public void sendSnapshot(List<MachineSnapshot> snapshots) {
+        public CompletableFuture<HttpResponse<String>> sendSnapshot(List<MachineSnapshot> snapshots) {
         String json = gson.toJson(snapshots);
 
         HttpRequest request = HttpRequest.newBuilder(SNAPSHOT_ENDPOINT)
@@ -39,12 +40,20 @@ public final class TelemetryApiClient {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
-
-        HTTP_CLIENT.sendAsync(
+        
+        return HTTP_CLIENT.sendAsync(
                         request,
                         HttpResponse.BodyHandlers.ofString()
                 )
-                .thenAccept(response -> {
+                .whenComplete((response, exception) -> {
+                    if (exception != null) {
+                        System.err.println(
+                                "Failed to send telemetry snapshot: " +
+                                        exception.getMessage()
+                        );
+                        return;
+                    }
+
                     if (response.statusCode() < 200 ||
                             response.statusCode() >= 300) {
                         System.err.printf(
@@ -53,13 +62,6 @@ public final class TelemetryApiClient {
                                 response.body()
                         );
                     }
-                })
-                .exceptionally(exception -> {
-                    System.err.println(
-                            "Failed to send telemetry snapshot: " +
-                                    exception.getMessage()
-                    );
-                    return null;
                 });
     }
 }

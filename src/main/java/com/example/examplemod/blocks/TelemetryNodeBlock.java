@@ -1,11 +1,13 @@
 package com.example.examplemod.blocks;
 
 import com.example.examplemod.ExampleMod;
+import com.example.examplemod.config.TelemetryServerConfig;
 import com.example.examplemod.entities.TelemetryBlockEntity;
 import com.example.examplemod.http.TelemetryApiClient;
 import com.example.examplemod.models.MachineSnapshot;
 import com.example.examplemod.models.MinimizedBlockPos;
 import com.example.examplemod.models.TelemetryNode;
+import com.example.examplemod.telemetry.RetryableOutboundItem;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
@@ -121,11 +123,15 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
                     "Is Active: " + snapshot.PoweredOn + "\n" +
                     "Timestamp: " + snapshot.ObservedAt.toString() + "\n"
             );
-            snapshots.add(snapshot);
-        }
 
-        TelemetryApiClient client = new TelemetryApiClient();
-        client.sendSnapshot(snapshots);
+            RetryableOutboundItem<MachineSnapshot> retryableSnapshot = new RetryableOutboundItem<MachineSnapshot>(
+                snapshot,
+                TelemetryServerConfig.MAX_RETRIES.get()
+            );
+
+            // Note that snapshots are only added when a machine is valid, otherwise the Telemetry Node is idle.
+            ExampleMod.OUTBOUND_MACHINE_SNAPSHOT_QUEUE.enqueueSnapshot(retryableSnapshot);
+        }
 
         level.scheduleTick(pos, this, ((TelemetryBlockEntity) blockEntity).getPollRateTicks());
     }
