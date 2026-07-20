@@ -36,6 +36,7 @@ public class MachineSnapshotController : ControllerBase
     {
         // Logic to create multiple machine snapshots
         await _machineSnapshotService.CreateMachineSnapshotsAsync(snapshots);
+        Console.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Created {snapshots.Count} machine snapshots.");
         return Ok();
     }
 }
