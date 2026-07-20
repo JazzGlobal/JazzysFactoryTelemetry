@@ -1,6 +1,7 @@
 package com.example.examplemod.http;
 
 import com.example.examplemod.blocks.TelemetryNodeBlock;
+import com.example.examplemod.models.MachineSnapshot;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonPrimitive;
@@ -30,7 +31,7 @@ public final class TelemetryApiClient {
             )
             .create();
 
-    public void sendSnapshot(List<TelemetryNodeBlock.MachineSnapshot> snapshots) {
+    public void sendSnapshot(List<MachineSnapshot> snapshots) {
         String json = gson.toJson(snapshots);
 
         HttpRequest request = HttpRequest.newBuilder(SNAPSHOT_ENDPOINT)

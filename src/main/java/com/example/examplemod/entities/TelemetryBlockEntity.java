@@ -10,8 +10,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 
-import com.example.examplemod.blocks.TelemetryNodeBlock.MinimizedBlockPos;
 import com.example.examplemod.config.TelemetryServerConfig;
+import com.example.examplemod.models.MinimizedBlockPos;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -101,6 +101,10 @@ public class TelemetryBlockEntity extends BlockEntity {
                 player.displayClientMessage(Component.literal("Machine is already linked."), true);
             }
         }
+    }
+
+    public void removeLinkedMachine(long machinePos) {
+        this.linkedMachines.remove(BlockPos.of(machinePos));
     }
 
     public UUID getNodeId() {

@@ -3,11 +3,13 @@ package com.example.examplemod.blocks;
 import com.example.examplemod.ExampleMod;
 import com.example.examplemod.entities.TelemetryBlockEntity;
 import com.example.examplemod.http.TelemetryApiClient;
+import com.example.examplemod.models.MachineSnapshot;
+import com.example.examplemod.models.MinimizedBlockPos;
+import com.example.examplemod.models.TelemetryNode;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -29,21 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TelemetryNodeBlock extends BaseEntityBlock {
-    // TODO: These records probably shouldn't be in this class.
-    public record RelativeBlock(BlockEntity blockEntity, Direction direction) {}
-    public record MinimizedBlockPos(int x, int y, int z) {}
-    public record TelemetryNode(
-            String telemetryNodeId,
-            List<MinimizedBlockPos> linkedMachines
-    ) {}
-    public record MachineSnapshot(
-            TelemetryNode telemetryNode,
-            String machineId,
-            String machineType,
-            boolean poweredOn,
-            Instant observedAt
-    ) {}
-
     public TelemetryNodeBlock(BlockBehaviour.Properties properties) {
         super(properties);
     }
@@ -108,36 +95,38 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
         {
             BlockPos machinePos = new BlockPos(new Vec3i(minimizedPos.x, minimizedPos.y, minimizedPos.z));
             BlockEntity machineBlockEntity = level.getBlockEntity(machinePos);
-
-            System.out.println("Linked Machine at: " + machinePos);
-            if (machineBlockEntity instanceof MetaMachineBlockEntity machineTile) {
-                MetaMachine machine = machineTile.getMetaMachine();
-                TelemetryNode telemetryNode = new TelemetryNode(
-                        telemetryNodeBlockEntity.getNodeId().toString(),
-                        telemetryNodeBlockEntity.getLinkedMachinesMinimized()
-                );
-                MachineSnapshot snapshot = new MachineSnapshot(
-                        telemetryNode,
-                        machine.getDefinition().getId().toString(),
-                        machine.getDefinition().getName(),
-                        isMachineActive(machine),
-                        Instant.now()
-                );
-                System.out.println(
-                        "Telemetry Node ID: " + snapshot.telemetryNode().telemetryNodeId() + "\n" +
-                        "Machine ID: " + snapshot.machineId + "\n" +
-                        "Machine Name: " + snapshot.machineType + "\n" +
-                        "Is Active: " + snapshot.poweredOn + "\n" +
-                        "Timestamp: " + snapshot.observedAt.toString() + "\n"
-                );
-                snapshots.add(snapshot);
+            
+            if (machineBlockEntity == null || !(machineBlockEntity instanceof MetaMachineBlockEntity)) {
+                telemetryNodeBlockEntity.removeLinkedMachine(machinePos.asLong());
+                continue;
             }
+
+            MetaMachineBlockEntity machineTile = (MetaMachineBlockEntity) machineBlockEntity;
+            MetaMachine machine = machineTile.getMetaMachine();
+            TelemetryNode telemetryNode = new TelemetryNode(
+                    telemetryNodeBlockEntity.getNodeId().toString(),
+                    telemetryNodeBlockEntity.getLinkedMachinesMinimized()
+            );
+            MachineSnapshot snapshot = new MachineSnapshot(
+                    telemetryNode,
+                    machine.getDefinition().getId().toString(),
+                    machine.getDefinition().getName(),
+                    isMachineActive(machine),
+                    Instant.now()
+            );
+            System.out.println(
+                    "Telemetry Node ID: " + snapshot.TelemetryNode.TelemetryNodeId + "\n" +
+                    "Machine ID: " + snapshot.MachineId + "\n" +
+                    "Machine Name: " + snapshot.MachineType + "\n" +
+                    "Is Active: " + snapshot.PoweredOn + "\n" +
+                    "Timestamp: " + snapshot.ObservedAt.toString() + "\n"
+            );
+            snapshots.add(snapshot);
         }
 
         TelemetryApiClient client = new TelemetryApiClient();
         client.sendSnapshot(snapshots);
 
-        // TODO: delay should be configurable and should match the onPlace override's first tick
         level.scheduleTick(pos, this, ((TelemetryBlockEntity) blockEntity).getPollRateTicks());
     }
 
