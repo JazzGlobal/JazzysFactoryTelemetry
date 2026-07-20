@@ -1,16 +1,14 @@
 package com.example.examplemod.items;
 
 import com.example.examplemod.entities.TelemetryBlockEntity;
+import com.example.examplemod.util.Notification;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
-import com.gregtechceu.gtceu.api.machine.SimpleTieredMachine;
 import com.gregtechceu.gtceu.api.machine.WorkableTieredMachine;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -18,7 +16,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class TelemetryLinkingTool extends Item {
     private static final String SELECTED_NODE_POS_TAG = "SelectedNodePos";
-    private BlockPos selectedNodePos; 
 
     /*
         On use:
@@ -72,22 +69,14 @@ public class TelemetryLinkingTool extends Item {
 
             if (!SupportsRecipeTelemetry(metaMachineBlockEntity))
             {
-                // TODO: getting the player from context + sending a message belongs in a helper.
-                Player player = context.getPlayer();
-                if (player != null) {
-                    player.displayClientMessage(Component.literal("This machine does not support telemetry"), true);
-                }
+                Notification.SendMessageToPlayer(context, "This machine does not support telemetry");
                 return InteractionResult.FAIL;
             }
 
             CompoundTag tag = stack.getTagElement(SELECTED_NODE_POS_TAG);
             if (tag == null) {
                 // No selected node, show message and return fail
-                // TODO: getting the player from context + sending a message belongs in a helper.
-                Player player = context.getPlayer();
-                if (player != null) {
-                    player.displayClientMessage(Component.literal("Select a Telemetry Node first"), true);
-                }
+                Notification.SendMessageToPlayer(context, "Select a Telemetry Node first");
                 return InteractionResult.FAIL;
             }
 
@@ -96,11 +85,7 @@ public class TelemetryLinkingTool extends Item {
             if (selectedNode == null) {
                 // Selected node no longer exists, clear tool selection and show message
                 stack.removeTagKey(SELECTED_NODE_POS_TAG);
-                // TODO: getting the player from context + sending a message belongs in a helper.
-                Player player = context.getPlayer();
-                if (player != null) {
-                    player.displayClientMessage(Component.literal("Selected Telemetry Node no longer exists"), true);
-                }
+                Notification.SendMessageToPlayer(context, "Selected Telemetry Node no longer exists");
                 return InteractionResult.FAIL;
             }
             selectedNode.addLinkedMachine(metaMachineBlockEntity.getBlockPos().asLong(), context);
