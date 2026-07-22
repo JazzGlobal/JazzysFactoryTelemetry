@@ -3,6 +3,7 @@ package com.example.examplemod.entities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -101,6 +102,10 @@ public class TelemetryBlockEntity extends BlockEntity {
                 player.displayClientMessage(Component.literal("Machine is already linked."), true);
             }
         }
+        else
+        {
+            setChanged();
+        }
     }
 
     public void removeLinkedMachine(long machinePos) {
@@ -117,5 +122,17 @@ public class TelemetryBlockEntity extends BlockEntity {
 
     public List<BlockPos> getLinkedMachines() {
         return new ArrayList<>(linkedMachines);
+    }
+
+    @Override
+    public void onLoad()
+    {
+        if (level instanceof ServerLevel serverLevel) {
+            serverLevel.scheduleTick(
+                worldPosition, 
+                getBlockState().getBlock(), 
+                pollRateTicks
+            );
+        }
     }
 }

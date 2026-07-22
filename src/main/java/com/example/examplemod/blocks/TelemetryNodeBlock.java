@@ -66,22 +66,15 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
     // Schedule our very first tick to initiate adjacent block polling.
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        if (!level.isClientSide)
-        {
-            // Retrieve the block entity to access its poll rate
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof TelemetryBlockEntity telemetryNodeBlockEntity) {
-                int pollRateTicks = telemetryNodeBlockEntity.getPollRateTicks();
-                // You can use pollRateTicks as needed
-                level.scheduleTick(pos, this, pollRateTicks);
-            }
-        }
+        ScheduleFirstTick(pos, level, state);
     }
 
     // On tick, perform a scan for adjacent blocks, then schedule another tick.
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         super.tick(state, level, pos, random);
+
+        System.out.println("Telemetry node tick at position: " + pos);
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof TelemetryBlockEntity telemetryNodeBlockEntity)) {
@@ -148,5 +141,15 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
             }
         }
         return false;
+    }
+
+    private void ScheduleFirstTick(BlockPos pos, Level level, BlockState state) {
+        if (!level.isClientSide) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof TelemetryBlockEntity telemetryNodeBlockEntity) {
+                int pollRateTicks = telemetryNodeBlockEntity.getPollRateTicks();
+                level.scheduleTick(pos, this, pollRateTicks);
+            }
+        }
     }
 }
