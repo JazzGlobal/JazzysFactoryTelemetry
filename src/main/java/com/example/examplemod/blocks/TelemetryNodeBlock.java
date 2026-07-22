@@ -91,7 +91,7 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
         }
 
         // Get list of Block Entities from the Telemetry Node Entity's Stored Linked Machines.
-        List<MachineSnapshot> snapshots = new ArrayList<>();
+        List<RetryableOutboundItem<MachineSnapshot>> snapshots = new ArrayList<>();
         List<MinimizedBlockPos> linkedMachineCoordinates = telemetryNodeBlockEntity.getLinkedMachinesMinimized();
         for (MinimizedBlockPos minimizedPos : linkedMachineCoordinates) 
         {
@@ -128,10 +128,14 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
                 snapshot,
                 TelemetryServerConfig.MAX_RETRIES.get()
             );
-
-            // Note that snapshots are only added when a machine is valid, otherwise the Telemetry Node is idle.
-            ExampleMod.OUTBOUND_MACHINE_SNAPSHOT_QUEUE.enqueueSnapshot(retryableSnapshot);
+            
+            snapshots.add(retryableSnapshot);
         }
+
+        if(!ExampleMod.OUTBOUND_MACHINE_SNAPSHOT_QUEUE.enqueueSnapshots(snapshots))
+        {
+            System.out.println("Failed to enqueue all snapshots to the outbound queue because the queue is");
+        };
 
         level.scheduleTick(pos, this, ((TelemetryBlockEntity) blockEntity).getPollRateTicks());
     }

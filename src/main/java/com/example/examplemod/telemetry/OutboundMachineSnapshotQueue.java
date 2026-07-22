@@ -1,7 +1,7 @@
 package com.example.examplemod.telemetry;
 
-import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import com.example.examplemod.models.MachineSnapshot;
@@ -16,27 +16,29 @@ public class OutboundMachineSnapshotQueue implements IOutboundMachineSnapshotQue
         this.dequeueSize = dequeueSize;
     }
 
-    public void enqueueSnapshot(RetryableOutboundItem<MachineSnapshot> snapshot) {
+    public boolean enqueueSnapshot(RetryableOutboundItem<MachineSnapshot> snapshot) {
         if (queue.size() >= maxSize) {
-            throw new IllegalStateException("Queue is full");
+           return false;
         }
         queue.add(snapshot);
+        return true;
     }
 
     public RetryableOutboundItem<MachineSnapshot> dequeueSnapshot() {
         return queue.poll();
     }
 
-    public void enqueueSnapshots(RetryableOutboundItem<MachineSnapshot>[] snapshots) {
+    public boolean enqueueSnapshots(List<RetryableOutboundItem<MachineSnapshot>> snapshots) {
         int availableSpace = maxSize - queue.size();
 
         // Enqueue what we can
-        queue.addAll(Arrays.asList(Arrays.copyOfRange(snapshots, 0, availableSpace)));
+        queue.addAll(snapshots.subList(0, Math.min(snapshots.size(), availableSpace)));
 
-        // If there are more snapshots than available space, throw an exception
-        if (snapshots.length > availableSpace) {
-            throw new IllegalStateException("Queue is full, cannot enqueue all snapshots.");
+        // If there are more snapshots than available space, return false
+        if (snapshots.size() > availableSpace) {
+            return false;
         }
+        return true;
     }
 
     public RetryableOutboundItem<MachineSnapshot>[] dequeueSnapshots() {
