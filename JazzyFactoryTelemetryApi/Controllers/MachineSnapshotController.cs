@@ -37,6 +37,14 @@ public class MachineSnapshotController : ControllerBase
         // Logic to create multiple machine snapshots
         await _machineSnapshotService.CreateMachineSnapshotsAsync(snapshots);
         Console.WriteLine($"{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")} Created {snapshots.Count} machine snapshots.");
+
         return Ok();
+    }
+
+    [HttpGet("total")]
+    public async Task<IActionResult> GetTotalMachineSnapshots()
+    {
+        var total = await _machineSnapshotService.GetTotalMachineSnapshotsAsync();
+        return Ok(total);
     }
 }

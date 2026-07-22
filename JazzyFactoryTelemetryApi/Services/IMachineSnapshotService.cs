@@ -7,4 +7,5 @@ public interface IMachineSnapshotService
     public Task<List<MachineSnapshot>> GetLatestMachineSnapshotsAsync();
     public Task CreateMachineSnapshotAsync(MachineSnapshot snapshot);
     public Task CreateMachineSnapshotsAsync(List<MachineSnapshot> snapshots);
+    public Task<int> GetTotalMachineSnapshotsAsync();
 }   
