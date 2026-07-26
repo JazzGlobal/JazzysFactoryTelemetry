@@ -16,7 +16,7 @@ public class OutboundMachineSnapshotQueue implements IOutboundMachineSnapshotQue
         this.dequeueSize = dequeueSize;
     }
 
-    public boolean enqueueSnapshot(RetryableOutboundItem<MachineSnapshot> snapshot) {
+    public synchronized boolean enqueueSnapshot(RetryableOutboundItem<MachineSnapshot> snapshot) {
         if (queue.size() >= maxSize) {
            return false;
         }
@@ -24,11 +24,11 @@ public class OutboundMachineSnapshotQueue implements IOutboundMachineSnapshotQue
         return true;
     }
 
-    public RetryableOutboundItem<MachineSnapshot> dequeueSnapshot() {
+    public synchronized RetryableOutboundItem<MachineSnapshot> dequeueSnapshot() {
         return queue.poll();
     }
 
-    public boolean enqueueSnapshots(List<RetryableOutboundItem<MachineSnapshot>> snapshots) {
+    public synchronized boolean enqueueSnapshots(List<RetryableOutboundItem<MachineSnapshot>> snapshots) {
         int availableSpace = maxSize - queue.size();
 
         // Enqueue what we can
@@ -41,7 +41,7 @@ public class OutboundMachineSnapshotQueue implements IOutboundMachineSnapshotQue
         return true;
     }
 
-    public RetryableOutboundItem<MachineSnapshot>[] dequeueSnapshots() {
+    public synchronized RetryableOutboundItem<MachineSnapshot>[] dequeueSnapshots() {
         int actualDequeueSize = Math.min(dequeueSize, queue.size());
         RetryableOutboundItem<MachineSnapshot>[] snapshots = new RetryableOutboundItem[actualDequeueSize];
         for (int i = 0; i < actualDequeueSize; i++) {
@@ -50,7 +50,7 @@ public class OutboundMachineSnapshotQueue implements IOutboundMachineSnapshotQue
         return snapshots;
     }
 
-    public boolean isEmpty() {
+    public synchronized boolean isEmpty() {
         return queue.isEmpty();
     }
 }
