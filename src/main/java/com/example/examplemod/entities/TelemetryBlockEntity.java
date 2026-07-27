@@ -110,6 +110,7 @@ public class TelemetryBlockEntity extends BlockEntity {
 
     public void removeLinkedMachine(long machinePos) {
         this.linkedMachines.remove(BlockPos.of(machinePos));
+        setChanged();
     }
 
     public UUID getNodeId() {
