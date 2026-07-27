@@ -31,11 +31,11 @@ public class TelemetryServerConfig {
                 .defineInRange("queueSendDefault", 10, 1, Integer.MAX_VALUE);
 
         QUEUE_SEND_RATE = builder
-                .comment("Rate at which the queue sends snapshots in ticks in miliseconds")
+                .comment("Rate at which the queue sends snapshots in milliseconds")
                 .defineInRange("queueSendRate", 20000, 2000, Integer.MAX_VALUE);
 
         QUEUE_SEND_DELAY = builder
-                .comment("Delay from server startup before sending snapshots from the queue in ticks in miliseconds")
+                .comment("Delay from server startup before sending snapshots from the queue in milliseconds")
                 .defineInRange("queueSendDelay", 20000, 5000, Integer.MAX_VALUE);
 
         MAX_RETRIES = builder
