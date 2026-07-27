@@ -68,7 +68,7 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         super.tick(state, level, pos, random);
 
-        System.out.println("Telemetry node tick at position: " + pos);
+        System.out.println("Telemetry node tick. Node position: " + pos);
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof TelemetryBlockEntity telemetryNodeBlockEntity)) {
@@ -85,7 +85,15 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
             BlockPos machinePos = new BlockPos(new Vec3i(minimizedPos.x, minimizedPos.y, minimizedPos.z));
             BlockEntity machineBlockEntity = level.getBlockEntity(machinePos);
             
+            // Handle chunk not loaded. We could theoretically have a telemetry node and machine in different chunks, so we skip this machine if its chunk is not loaded because
+            // level.getBlockEntity(machinePos) would be null in unloaded chunks.
+            if (!level.isLoaded(machinePos)) {
+                System.out.println("Skipping machine at " + machinePos + " because its chunk is not loaded.");
+                continue;
+            }
+
             if (machineBlockEntity == null || !(machineBlockEntity instanceof MetaMachineBlockEntity)) {
+                System.out.println("Removing linked machine at " + machinePos);
                 telemetryNodeBlockEntity.removeLinkedMachine(machinePos.asLong());
                 continue;
             }
@@ -103,13 +111,13 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
                     isMachineActive(machine),
                     Instant.now()
             );
-            System.out.println(
-                    "Telemetry Node ID: " + snapshot.TelemetryNode.TelemetryNodeId + "\n" +
-                    "Machine ID: " + snapshot.MachineId + "\n" +
-                    "Machine Name: " + snapshot.MachineType + "\n" +
-                    "Is Active: " + snapshot.PoweredOn + "\n" +
-                    "Timestamp: " + snapshot.ObservedAt.toString() + "\n"
-            );
+            // System.out.println(
+            //         "Telemetry Node ID: " + snapshot.TelemetryNode.TelemetryNodeId + "\n" +
+            //         "Machine ID: " + snapshot.MachineId + "\n" +
+            //         "Machine Name: " + snapshot.MachineType + "\n" +
+            //         "Is Active: " + snapshot.PoweredOn + "\n" +
+            //         "Timestamp: " + snapshot.ObservedAt.toString() + "\n"
+            // );
 
             RetryableOutboundItem<MachineSnapshot> retryableSnapshot = new RetryableOutboundItem<MachineSnapshot>(
                 snapshot,
