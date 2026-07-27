@@ -88,15 +88,16 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
             // Handle chunk not loaded. We could theoretically have a telemetry node and machine in different chunks, so we skip this machine if its chunk is not loaded because
             // level.getBlockEntity(machinePos) would be null in unloaded chunks.
             if (!level.isLoaded(machinePos)) {
-                System.out.println("Skipping machine at " + machinePos + " because its chunk is not loaded.");
+                ExampleMod.LOGGER.info("Skipping machine at {} because its chunk is not loaded.", machinePos);
                 continue;
             }
 
             if (machineBlockEntity == null || !(machineBlockEntity instanceof MetaMachineBlockEntity)) {
-                System.out.println("Removing linked machine at " + machinePos);
+                ExampleMod.LOGGER.info("Removing linked machine at {} because it is not a MetaMachineBlockEntity.", machinePos);
                 telemetryNodeBlockEntity.removeLinkedMachine(machinePos.asLong());
                 continue;
             }
+            
 
             MetaMachineBlockEntity machineTile = (MetaMachineBlockEntity) machineBlockEntity;
             MetaMachine machine = machineTile.getMetaMachine();
@@ -111,14 +112,8 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
                     isMachineActive(machine),
                     Instant.now()
             );
-            // System.out.println(
-            //         "Telemetry Node ID: " + snapshot.TelemetryNode.TelemetryNodeId + "\n" +
-            //         "Machine ID: " + snapshot.MachineId + "\n" +
-            //         "Machine Name: " + snapshot.MachineType + "\n" +
-            //         "Is Active: " + snapshot.PoweredOn + "\n" +
-            //         "Timestamp: " + snapshot.ObservedAt.toString() + "\n"
-            // );
 
+            ExampleMod.LOGGER.info("Created snapshot for machine at {}: {}", machinePos, snapshot);
             RetryableOutboundItem<MachineSnapshot> retryableSnapshot = new RetryableOutboundItem<MachineSnapshot>(
                 snapshot,
                 TelemetryServerConfig.MAX_RETRIES.get()
@@ -129,7 +124,7 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
 
         if(!ExampleMod.OUTBOUND_MACHINE_SNAPSHOT_QUEUE.enqueueSnapshots(snapshots))
         {
-            System.out.println("Failed to enqueue all snapshots to the outbound queue because the queue is");
+            ExampleMod.LOGGER.warn("Failed to enqueue all snapshots to the outbound queue because the queue is full.");
         };
 
         level.scheduleTick(pos, this, ((TelemetryBlockEntity) blockEntity).getPollRateTicks());
