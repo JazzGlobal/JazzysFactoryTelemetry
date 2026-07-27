@@ -80,6 +80,11 @@ public class ExampleMod {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("REGISTRATE VALUE: " + BuiltInRegistries.BLOCK);
+
+            // Ensure no telemetry tasks are left running
+            if (MACHINE_SNAPSHOT_EXECUTOR != null && !MACHINE_SNAPSHOT_EXECUTOR.isShutdown()) {
+                MACHINE_SNAPSHOT_EXECUTOR.shutdownNow();
+            }
         }));
 
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
