@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import com.example.examplemod.ExampleMod;
 import com.example.examplemod.http.TelemetryApiClient;
 import com.example.examplemod.models.MachineSnapshot;
 
@@ -33,11 +34,11 @@ public class MachineSnapshotSender implements IMachineSnapshotSender {
         telemetryClient
                 .sendSnapshot(new ArrayList<MachineSnapshot>(List.of(snapshot.Payload)))
                 .whenComplete((response, error) -> {
-                    if (error != null) {
+                    if (error != null || response.statusCode() != 200) {
                         handleFailedSnapshot(new RetryableOutboundItem[]{snapshot});
                         return;
                     }
-                    System.out.println("Snapshot sent. Status: " + response.statusCode());
+                    ExampleMod.LOGGER.info("Snapshot sent successfully. Status: {}", response.statusCode());
                 });
     }
 
@@ -51,12 +52,12 @@ public class MachineSnapshotSender implements IMachineSnapshotSender {
         telemetryClient
             .sendSnapshot(snapshotPayloads)
             .whenComplete((response, error) -> {
-                if (error != null) {
-                    // TODO: The API currently doesn't report which snapshots failed.
+                if (error != null || response.statusCode() != 200) {
+                    // TODO: The API currently doesn't report which snapshots failed and which succeeded in the batch
                     // Batch retry therefore won't be implemented yet. 
                     return;
                 }
-                System.out.println("Snapshots sent. Status: " + response.statusCode());
+                ExampleMod.LOGGER.info("Snapshots sent successfully. Status: {}", response.statusCode());
             });
     }
 
