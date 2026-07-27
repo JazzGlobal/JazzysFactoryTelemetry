@@ -8,7 +8,7 @@ public class Notification {
     /*
     * Sends an in-game client notification to the player associated with the given context.
     */
-    public static void SendMessageToPlayer(UseOnContext context, String message)
+    public static void sendMessageToPlayer(UseOnContext context, String message)
     {
         if (context == null || message == null || message.isEmpty()) {
             return;

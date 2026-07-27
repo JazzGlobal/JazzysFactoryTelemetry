@@ -69,14 +69,14 @@ public class TelemetryLinkingTool extends Item {
 
             if (!SupportsRecipeTelemetry(metaMachineBlockEntity))
             {
-                Notification.SendMessageToPlayer(context, "This machine does not support telemetry");
+                Notification.sendMessageToPlayer(context, "This machine does not support telemetry");
                 return InteractionResult.FAIL;
             }
 
             CompoundTag tag = stack.getTagElement(SELECTED_NODE_POS_TAG);
             if (tag == null) {
                 // No selected node, show message and return fail
-                Notification.SendMessageToPlayer(context, "Select a Telemetry Node first");
+                Notification.sendMessageToPlayer(context, "Select a Telemetry Node first");
                 return InteractionResult.FAIL;
             }
 
@@ -86,7 +86,7 @@ public class TelemetryLinkingTool extends Item {
             {
                 // Selected node no longer exists, clear tool selection and show message
                 stack.removeTagKey(SELECTED_NODE_POS_TAG);
-                Notification.SendMessageToPlayer(context, "Selected Telemetry Node no longer exists, select another!");
+                Notification.sendMessageToPlayer(context, "Selected Telemetry Node no longer exists, select another!");
                 return InteractionResult.FAIL;
             }
             else
@@ -98,7 +98,7 @@ public class TelemetryLinkingTool extends Item {
             }
         }
         else {
-            Notification.SendMessageToPlayer(context, "This tool can only be used on Telemetry Nodes or supported machines");
+            Notification.sendMessageToPlayer(context, "This tool can only be used on Telemetry Nodes or supported machines");
             return InteractionResult.FAIL;
         }
     }
