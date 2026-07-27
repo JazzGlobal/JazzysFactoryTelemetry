@@ -17,33 +17,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class TelemetryLinkingTool extends Item {
     private static final String SELECTED_NODE_POS_TAG = "SelectedNodePos";
 
-    /*
-        On use:
-    clickedBlockEntity = level.getBlockEntity(clickedPos)
-
-    if clickedBlockEntity is TelemetryBlockEntity:
-        store node dimension + position in tool NBT
-        return success
-
-    if clickedBlockEntity is MetaMachineBlockEntity:
-        if tool has no selected node:
-            show "Select a Telemetry Node first"
-            return fail
-
-        resolve selected node from stored dimension + position
-
-        if selected node no longer exists:
-            clear tool selection
-            show "Selected Telemetry Node no longer exists"
-            return fail
-
-        selectedNode.addLinkedMachine(machine dimension + position)
-        return success
-
-    otherwise:
-        do nothing
-    */
-   
     public TelemetryLinkingTool(Properties properties) {
         super(properties);
     }
