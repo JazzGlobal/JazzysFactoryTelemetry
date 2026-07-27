@@ -62,10 +62,10 @@ public class TelemetryLinkingTool extends Item {
                 stack.addTagElement(SELECTED_NODE_POS_TAG, tag);
             }
             tag.putLong("SelectedNodePos", telemetryBlockEntity.getBlockPos().asLong());
+            return InteractionResult.SUCCESS;
         }
-
         // If the selected block is a MetaMachineBlockEntity, handle linking with the selected Telemetry node.
-        if (blockEntity instanceof MetaMachineBlockEntity metaMachineBlockEntity) {
+        else if (blockEntity instanceof MetaMachineBlockEntity metaMachineBlockEntity) {
 
             if (!SupportsRecipeTelemetry(metaMachineBlockEntity))
             {
@@ -89,9 +89,12 @@ public class TelemetryLinkingTool extends Item {
                 return InteractionResult.FAIL;
             }
             selectedNode.addLinkedMachine(metaMachineBlockEntity.getBlockPos().asLong(), context);
+            return InteractionResult.SUCCESS;
         }
-
-        return InteractionResult.SUCCESS;
+        else {
+            Notification.SendMessageToPlayer(context, "This tool can only be used on Telemetry Nodes or supported machines");
+            return InteractionResult.FAIL;
+        }
     }
 
     public static boolean SupportsRecipeTelemetry(MetaMachineBlockEntity blockEntity) {
