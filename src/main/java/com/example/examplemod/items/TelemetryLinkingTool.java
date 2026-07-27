@@ -81,15 +81,21 @@ public class TelemetryLinkingTool extends Item {
             }
 
             BlockPos selectedNodePos = BlockPos.of(tag.getLong("SelectedNodePos"));
-            TelemetryBlockEntity selectedNode = (TelemetryBlockEntity) context.getLevel().getBlockEntity(selectedNodePos);
-            if (selectedNode == null) {
+            BlockEntity selectedNode = context.getLevel().getBlockEntity(selectedNodePos);
+            if (selectedNode == null || !(selectedNode instanceof TelemetryBlockEntity))
+            {
                 // Selected node no longer exists, clear tool selection and show message
                 stack.removeTagKey(SELECTED_NODE_POS_TAG);
-                Notification.SendMessageToPlayer(context, "Selected Telemetry Node no longer exists");
+                Notification.SendMessageToPlayer(context, "Selected Telemetry Node no longer exists, select another!");
                 return InteractionResult.FAIL;
             }
-            selectedNode.addLinkedMachine(metaMachineBlockEntity.getBlockPos().asLong(), context);
-            return InteractionResult.SUCCESS;
+            else
+            {
+                // Selected node is a valid TelemetryBlockEntity
+                TelemetryBlockEntity telemetryBlockEntity = (TelemetryBlockEntity) selectedNode;
+                telemetryBlockEntity.addLinkedMachine(metaMachineBlockEntity.getBlockPos().asLong(), context);
+                return InteractionResult.SUCCESS;
+            }
         }
         else {
             Notification.SendMessageToPlayer(context, "This tool can only be used on Telemetry Nodes or supported machines");
