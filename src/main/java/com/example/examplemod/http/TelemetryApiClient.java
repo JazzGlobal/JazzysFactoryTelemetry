@@ -1,6 +1,5 @@
 package com.example.examplemod.http;
 
-import com.example.examplemod.blocks.TelemetryNodeBlock;
 import com.example.examplemod.models.MachineSnapshot;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
