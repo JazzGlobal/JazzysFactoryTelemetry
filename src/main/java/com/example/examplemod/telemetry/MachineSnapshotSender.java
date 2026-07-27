@@ -1,9 +1,7 @@
 package com.example.examplemod.telemetry;
 
-import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import com.example.examplemod.ExampleMod;
 import com.example.examplemod.http.TelemetryApiClient;

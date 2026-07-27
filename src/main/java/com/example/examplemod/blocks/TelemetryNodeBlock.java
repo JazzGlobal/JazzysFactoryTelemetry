@@ -3,7 +3,6 @@ package com.example.examplemod.blocks;
 import com.example.examplemod.ExampleMod;
 import com.example.examplemod.config.TelemetryServerConfig;
 import com.example.examplemod.entities.TelemetryBlockEntity;
-import com.example.examplemod.http.TelemetryApiClient;
 import com.example.examplemod.models.MachineSnapshot;
 import com.example.examplemod.models.MinimizedBlockPos;
 import com.example.examplemod.models.TelemetryNode;
