@@ -2,6 +2,8 @@ package com.example.examplemod.models;
 
 import java.time.Instant;
 
+import lombok.ToString;
+
 public class MachineSnapshot {
     public TelemetryNode TelemetryNode;
     public String MachineId;
@@ -15,5 +17,16 @@ public class MachineSnapshot {
         this.MachineType = machineType;
         this.PoweredOn = poweredOn;
         this.ObservedAt = observedAt;
+    }
+
+    @Override
+    public String toString() {
+        return "MachineSnapshot{" +
+                "TelemetryNode=" + TelemetryNode +
+                ", MachineId='" + MachineId + '\'' +
+                ", MachineType='" + MachineType + '\'' +
+                ", PoweredOn=" + PoweredOn +
+                ", ObservedAt=" + ObservedAt +
+                '}';
     }
 }
