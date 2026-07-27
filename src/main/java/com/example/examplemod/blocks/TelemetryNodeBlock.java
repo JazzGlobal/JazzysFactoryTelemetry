@@ -3,6 +3,7 @@ package com.example.examplemod.blocks;
 import com.example.examplemod.ExampleMod;
 import com.example.examplemod.config.TelemetryServerConfig;
 import com.example.examplemod.entities.TelemetryBlockEntity;
+import com.example.examplemod.items.TelemetryLinkingTool;
 import com.example.examplemod.models.MachineSnapshot;
 import com.example.examplemod.models.MinimizedBlockPos;
 import com.example.examplemod.models.TelemetryNode;
@@ -100,6 +101,12 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
             
 
             MetaMachineBlockEntity machineTile = (MetaMachineBlockEntity) machineBlockEntity;
+            if (!TelemetryLinkingTool.SupportsRecipeTelemetry(machineTile))
+            {
+                ExampleMod.LOGGER.info("Skipping machine at {} because it does not support recipe telemetry.", machinePos);
+                telemetryNodeBlockEntity.removeLinkedMachine(machinePos.asLong());
+                continue;
+            }
             MetaMachine machine = machineTile.getMetaMachine();
             TelemetryNode telemetryNode = new TelemetryNode(
                     telemetryNodeBlockEntity.getNodeId().toString(),
