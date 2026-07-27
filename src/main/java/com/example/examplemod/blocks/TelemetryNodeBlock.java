@@ -82,7 +82,6 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
         for (MinimizedBlockPos minimizedPos : linkedMachineCoordinates) 
         {
             BlockPos machinePos = new BlockPos(new Vec3i(minimizedPos.x, minimizedPos.y, minimizedPos.z));
-            BlockEntity machineBlockEntity = level.getBlockEntity(machinePos);
             
             // Handle chunk not loaded. We could theoretically have a telemetry node and machine in different chunks, so we skip this machine if its chunk is not loaded because
             // level.getBlockEntity(machinePos) would be null in unloaded chunks.
@@ -91,6 +90,8 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
                 continue;
             }
 
+            BlockEntity machineBlockEntity = level.getBlockEntity(machinePos);
+            
             if (machineBlockEntity == null || !(machineBlockEntity instanceof MetaMachineBlockEntity)) {
                 ExampleMod.LOGGER.info("Removing linked machine at {} because it is not a MetaMachineBlockEntity.", machinePos);
                 telemetryNodeBlockEntity.removeLinkedMachine(machinePos.asLong());
