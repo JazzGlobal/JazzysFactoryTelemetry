@@ -1,6 +1,11 @@
 package com.example.examplemod;
 
 import com.example.examplemod.blocks.TelemetryNodeBlock;
+import com.example.examplemod.entities.TelemetryBlockEntity;
+import com.example.examplemod.http.TelemetryApiClient;
+import com.example.examplemod.items.TelemetryLinkingTool;
+import com.example.examplemod.telemetry.MachineSnapshotSender;
+import com.example.examplemod.telemetry.OutboundMachineSnapshotQueue;
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent;
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent;
@@ -13,29 +18,42 @@ import com.gregtechceu.gtceu.api.sound.SoundEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.tterrag.registrate.util.entry.BlockEntry;
-import net.minecraft.world.level.block.Block;
+import com.tterrag.registrate.util.entry.ItemEntry;
+import com.tterrag.registrate.util.entry.BlockEntityEntry;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.example.examplemod.config.TelemetryServerConfig;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 
 @Mod(ExampleMod.MOD_ID)
 @SuppressWarnings("removal")
 public class ExampleMod {
-
+    
+    // Telemetry Flow Components
+    public static OutboundMachineSnapshotQueue OUTBOUND_MACHINE_SNAPSHOT_QUEUE;
+    public static MachineSnapshotSender MACHINE_SNAPSHOT_SENDER;
+    public static ScheduledExecutorService MACHINE_SNAPSHOT_EXECUTOR;
+    
     public static final String MOD_ID = "examplemod";
     public static final Logger LOGGER = LogManager.getLogger();
     public static GTRegistrate EXAMPLE_REGISTRATE = GTRegistrate.create(ExampleMod.MOD_ID);
+    
+    // Custom Registrations
     public static final BlockEntry<TelemetryNodeBlock> TELEMETRY_NODE = EXAMPLE_REGISTRATE
             .block("telemetry_node", TelemetryNodeBlock::new)
             .properties(properties -> properties.strength(2.0f)
@@ -43,16 +61,36 @@ public class ExampleMod {
             .item()
             .build()
             .register();
+    public static final BlockEntityEntry<TelemetryBlockEntity> TELEMETRY_BLOCK_ENTITY_BLOCK_ENTITY_ENTRY = EXAMPLE_REGISTRATE
+            .blockEntity("telemetry_node", TelemetryBlockEntity::new
+            )
+            .validBlock(TELEMETRY_NODE)
+            .register();
 
+    public static final ItemEntry<TelemetryLinkingTool> TELEMETRY_LINKING_TOOL = EXAMPLE_REGISTRATE
+            .item("telemetry_linking_tool", TelemetryLinkingTool::new)
+            .register();
+    
     public ExampleMod() {
+        
+        // Register the server configuration
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, TelemetryServerConfig.SERVER_CONFIG);
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("REGISTRATE VALUE: " + BuiltInRegistries.BLOCK);
+            ExampleMod.LOGGER.debug("Example Mod Shutdown hook invoked.");
+            // Ensure no telemetry tasks are left running
+            if (MACHINE_SNAPSHOT_EXECUTOR != null && !MACHINE_SNAPSHOT_EXECUTOR.isShutdown()) {
+                MACHINE_SNAPSHOT_EXECUTOR.shutdownNow();
+            }
         }));
+
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::clientSetup);
-
+        modEventBus.addListener(this::onConfigLoading);
+        modEventBus.addListener(this::onConfigReloading);
+        
         modEventBus.addListener(this::addMaterialRegistries);
         modEventBus.addListener(this::addMaterials);
         modEventBus.addListener(this::modifyMaterials);
@@ -67,6 +105,45 @@ public class ExampleMod {
         MinecraftForge.EVENT_BUS.register(this);
 
         EXAMPLE_REGISTRATE.registerRegistrate();
+    }
+
+    private void onConfigLoading(final ModConfigEvent.Loading event) {
+        if (event.getConfig().getSpec() != TelemetryServerConfig.SERVER_CONFIG) {
+            return;
+        }
+        rebuildTelemetryPipelineFromConfig();
+    }
+
+    private void onConfigReloading(final ModConfigEvent.Reloading event) {
+        if (event.getConfig().getSpec() != TelemetryServerConfig.SERVER_CONFIG) {
+            return;
+        }
+        rebuildTelemetryPipelineFromConfig();
+    }
+
+    private synchronized void rebuildTelemetryPipelineFromConfig() {
+        if (MACHINE_SNAPSHOT_EXECUTOR != null && !MACHINE_SNAPSHOT_EXECUTOR.isShutdown()) {
+            MACHINE_SNAPSHOT_EXECUTOR.shutdownNow();
+        }
+
+        OUTBOUND_MACHINE_SNAPSHOT_QUEUE = new OutboundMachineSnapshotQueue(
+                TelemetryServerConfig.MAX_QUEUE_SIZE.get(),
+                TelemetryServerConfig.QUEUE_SEND_DEFAULT.get()
+        );
+        MACHINE_SNAPSHOT_SENDER = new MachineSnapshotSender(
+            OUTBOUND_MACHINE_SNAPSHOT_QUEUE, 
+            new TelemetryApiClient()
+        );
+
+        MACHINE_SNAPSHOT_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+        MACHINE_SNAPSHOT_EXECUTOR.scheduleWithFixedDelay(
+            MACHINE_SNAPSHOT_SENDER::sendSnapshots, 
+            TelemetryServerConfig.QUEUE_SEND_DELAY.get(), 
+            TelemetryServerConfig.QUEUE_SEND_RATE.get(), 
+            TimeUnit.MILLISECONDS
+        );
+
+        LOGGER.info("Telemetry pipeline initialized from loaded server config.");
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

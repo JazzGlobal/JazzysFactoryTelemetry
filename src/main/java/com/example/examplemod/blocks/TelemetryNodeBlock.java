@@ -1,12 +1,18 @@
 package com.example.examplemod.blocks;
 
 import com.example.examplemod.ExampleMod;
-import com.example.examplemod.http.TelemetryApiClient;
+import com.example.examplemod.config.TelemetryServerConfig;
+import com.example.examplemod.entities.TelemetryBlockEntity;
+import com.example.examplemod.items.TelemetryLinkingTool;
+import com.example.examplemod.models.MachineSnapshot;
+import com.example.examplemod.models.MinimizedBlockPos;
+import com.example.examplemod.models.TelemetryNode;
+import com.example.examplemod.telemetry.RetryableOutboundItem;
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -14,30 +20,31 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-
-
-public class TelemetryNodeBlock extends Block {
-    // TODO: These records probably shouldn't be in this class.
-    public record RelativeBlock(BlockEntity blockEntity, Direction direction) {}
-    public record MachineSnapshot(
-            String machineId,
-            String machineType,
-            boolean poweredOn,
-            Instant observedAt
-    ) {}
-
+public class TelemetryNodeBlock extends BaseEntityBlock {
     public TelemetryNodeBlock(BlockBehaviour.Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return ExampleMod.TELEMETRY_BLOCK_ENTITY_BLOCK_ENTITY_ENTRY.create(pos, state);
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
     }
 
     @Override
@@ -51,19 +58,9 @@ public class TelemetryNodeBlock extends Block {
     )
     {
         var msg = player.getDisplayName().getString() + " Interacted with " + state.getBlock().getName().getString() + "!";
-        System.out.println(msg);
+        ExampleMod.LOGGER.info(msg);
         player.sendSystemMessage(Component.literal(msg));
         return InteractionResult.sidedSuccess(level.isClientSide);
-    }
-
-    // Schedule our very first tick to initiate adjacent block polling.
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        if (!level.isClientSide)
-        {
-            // TODO: delay should be configurable and should match the tick override's delay.
-            level.scheduleTick(pos, this, 200);
-        }
     }
 
     // On tick, perform a scan for adjacent blocks, then schedule another tick.
@@ -71,48 +68,72 @@ public class TelemetryNodeBlock extends Block {
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         super.tick(state, level, pos, random);
 
-        List<RelativeBlock> adjacentBlocks = GetAdjacentBlocks(this, pos, level);
-        List<MachineSnapshot> snapshots = new ArrayList<>();
-        for (RelativeBlock block : adjacentBlocks)
+        ExampleMod.LOGGER.info("Fetching block entity at position: {}", pos);
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!(blockEntity instanceof TelemetryBlockEntity telemetryNodeBlockEntity)) {
+            ExampleMod.LOGGER.warn("Telemetry node at {} is missing its block entity", pos);
+            level.scheduleTick(pos, this, 200);
+            return;
+        }
+
+        // Get list of Block Entities from the Telemetry Node Entity's Stored Linked Machines.
+        List<RetryableOutboundItem<MachineSnapshot>> snapshots = new ArrayList<>();
+        List<MinimizedBlockPos> linkedMachineCoordinates = telemetryNodeBlockEntity.getLinkedMachinesMinimized();
+        for (MinimizedBlockPos minimizedPos : linkedMachineCoordinates) 
         {
-            System.out.println("Adjacent Block for " + block.direction.name() + ": " + block.blockEntity.getBlockState().getBlock().getName());
-            if (block.blockEntity instanceof MetaMachineBlockEntity machineTile) {
-                MetaMachine machine = machineTile.getMetaMachine();
-                MachineSnapshot snapshot = new MachineSnapshot(
-                        machine.getDefinition().getId().toString(),
-                        machine.getDefinition().getName(),
-                        isMachineActive(machine),
-                        Instant.now()
-                );
-                System.out.println(
-                        "Machine ID: " + snapshot.machineId + "\n" +
-                        "Machine Name: " + snapshot.machineType + "\n" +
-                        "Is Active: " + snapshot.poweredOn + "\n" +
-                        "Timestamp: " + snapshot.observedAt.toString() + "\n"
-                );
-                snapshots.add(snapshot);
+            BlockPos machinePos = new BlockPos(new Vec3i(minimizedPos.x, minimizedPos.y, minimizedPos.z));
+            
+            // Handle chunk not loaded. We could theoretically have a telemetry node and machine in different chunks, so we skip this machine if its chunk is not loaded because
+            // level.getBlockEntity(machinePos) would be null in unloaded chunks.
+            if (!level.isLoaded(machinePos)) {
+                ExampleMod.LOGGER.info("Skipping machine at {} because its chunk is not loaded.", machinePos);
+                continue;
             }
+
+            BlockEntity machineBlockEntity = level.getBlockEntity(machinePos);
+            
+            if (machineBlockEntity == null || !(machineBlockEntity instanceof MetaMachineBlockEntity)) {
+                ExampleMod.LOGGER.info("Removing linked machine at {} because it is not a MetaMachineBlockEntity.", machinePos);
+                telemetryNodeBlockEntity.removeLinkedMachine(machinePos.asLong());
+                continue;
+            }
+            
+
+            MetaMachineBlockEntity machineTile = (MetaMachineBlockEntity) machineBlockEntity;
+            if (!TelemetryLinkingTool.SupportsRecipeTelemetry(machineTile))
+            {
+                ExampleMod.LOGGER.info("Skipping machine at {} because it does not support recipe telemetry.", machinePos);
+                telemetryNodeBlockEntity.removeLinkedMachine(machinePos.asLong());
+                continue;
+            }
+            MetaMachine machine = machineTile.getMetaMachine();
+            TelemetryNode telemetryNode = new TelemetryNode(
+                    telemetryNodeBlockEntity.getNodeId().toString(),
+                    telemetryNodeBlockEntity.getLinkedMachinesMinimized()
+            );
+            MachineSnapshot snapshot = new MachineSnapshot(
+                    telemetryNode,
+                    machine.getDefinition().getId().toString(),
+                    machine.getDefinition().getName(),
+                    isMachineActive(machine),
+                    Instant.now()
+            );
+
+            ExampleMod.LOGGER.info("Created snapshot for machine at {}: {}", machinePos, snapshot);
+            RetryableOutboundItem<MachineSnapshot> retryableSnapshot = new RetryableOutboundItem<MachineSnapshot>(
+                snapshot,
+                TelemetryServerConfig.MAX_RETRIES.get()
+            );
+            
+            snapshots.add(retryableSnapshot);
         }
 
-        TelemetryApiClient client = new TelemetryApiClient();
-        client.sendSnapshot(snapshots);
-
-        // TODO: delay should be configurable and should match the onPlace override's first tick
-        level.scheduleTick(pos, this, 200);
-    }
-
-    private List<RelativeBlock> GetAdjacentBlocks(TelemetryNodeBlock block, BlockPos pos, ServerLevel level)
-    {
-        List<RelativeBlock> relativeBlocks = new ArrayList<>();
-        for (Direction direction : Direction.values())
+        if(ExampleMod.OUTBOUND_MACHINE_SNAPSHOT_QUEUE == null || !ExampleMod.OUTBOUND_MACHINE_SNAPSHOT_QUEUE.enqueueSnapshots(snapshots))
         {
-            BlockPos adjacentPos = pos.relative(direction);
-            BlockEntity blockEntity = level.getBlockEntity(adjacentPos);
-            if (blockEntity != null)
-                relativeBlocks.add(new RelativeBlock(blockEntity, direction));
+            ExampleMod.LOGGER.warn("Failed to enqueue all snapshots to the outbound queue because the queue is full or wasn't initialized.");
         }
 
-        return relativeBlocks;
+        level.scheduleTick(pos, this, ((TelemetryBlockEntity) blockEntity).getPollRateTicks());
     }
 
     public boolean isMachineActive(MetaMachine machine)
@@ -124,4 +145,5 @@ public class TelemetryNodeBlock extends Block {
         }
         return false;
     }
+
 }

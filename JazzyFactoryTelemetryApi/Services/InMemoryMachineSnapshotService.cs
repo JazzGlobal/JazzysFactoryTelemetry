@@ -21,4 +21,9 @@ public class InMemoryMachineSnapshotService : IMachineSnapshotService
     {
         return Task.FromResult(_snapshots);
     }
+
+    public Task<int> GetTotalMachineSnapshotsAsync()
+    {
+        return Task.FromResult(_snapshots.Count);
+    }
 }
