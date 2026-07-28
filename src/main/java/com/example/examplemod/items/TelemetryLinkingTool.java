@@ -52,8 +52,8 @@ public class TelemetryLinkingTool extends Item {
             }
 
             CompoundTag tag = stack.getTagElement(SELECTED_NODE_POS_TAG);
-            if (tag == null) {
-                // No selected node, show message and return fail
+            // No selected node / selected node is somehow default value, show message and return fail
+            if (tag == null || !tag.contains("SelectedNodePos", CompoundTag.TAG_LONG)) {
                 Notification.sendMessageToPlayer(context, "Select a Telemetry Node first");
                 return InteractionResult.FAIL;
             }
