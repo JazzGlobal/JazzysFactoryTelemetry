@@ -30,7 +30,7 @@ public class MachineSnapshotSender implements IMachineSnapshotSender {
             return;
         }
         telemetryClient
-                .sendSnapshot(new ArrayList<MachineSnapshot>(List.of(snapshot.Payload)))
+                .sendSnapshot(new ArrayList<MachineSnapshot>(List.of(snapshot.getPayload())))
                 .whenComplete((response, error) -> {
                     if (error != null || response.statusCode() != 200) {
                         handleFailedSnapshot(new RetryableOutboundItem[]{snapshot});
@@ -46,7 +46,7 @@ public class MachineSnapshotSender implements IMachineSnapshotSender {
         if (snapshots == null || snapshots.length == 0) {
             return;
         }
-        List<MachineSnapshot> snapshotPayloads = List.of(snapshots).stream().map(item -> item.Payload).toList();
+        List<MachineSnapshot> snapshotPayloads = List.of(snapshots).stream().map(item -> item.getPayload()).toList();
         telemetryClient
             .sendSnapshot(snapshotPayloads)
             .whenComplete((response, error) -> {
@@ -64,8 +64,8 @@ public class MachineSnapshotSender implements IMachineSnapshotSender {
         List<RetryableOutboundItem<MachineSnapshot>> thrownAway = new ArrayList<>();
         for (RetryableOutboundItem<MachineSnapshot> snapshot : snapshots) {
             // Requeue the snapshot if it has not reached the maximum retry count.
-            if (snapshot.RetryCount < snapshot.MaxRetries) {
-                snapshot.RetryCount++;
+            if (snapshot.getRetryCount() < snapshot.getMaxRetries()) {
+                snapshot.incrementRetryCount();
                 outboundQueue.enqueueSnapshot(snapshot);
             } else {
                 thrownAway.add(snapshot);
