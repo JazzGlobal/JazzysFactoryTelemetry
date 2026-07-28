@@ -128,9 +128,9 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
             snapshots.add(retryableSnapshot);
         }
 
-        if(!ExampleMod.OUTBOUND_MACHINE_SNAPSHOT_QUEUE.enqueueSnapshots(snapshots))
+        if(ExampleMod.OUTBOUND_MACHINE_SNAPSHOT_QUEUE == null || !ExampleMod.OUTBOUND_MACHINE_SNAPSHOT_QUEUE.enqueueSnapshots(snapshots))
         {
-            ExampleMod.LOGGER.warn("Failed to enqueue all snapshots to the outbound queue because the queue is full.");
+            ExampleMod.LOGGER.warn("Failed to enqueue all snapshots to the outbound queue because the queue is full or wasn't initialized.");
         }
 
         level.scheduleTick(pos, this, ((TelemetryBlockEntity) blockEntity).getPollRateTicks());
