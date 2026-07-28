@@ -75,7 +75,7 @@ public class MachineSnapshotSender implements IMachineSnapshotSender {
         if (thrownAway.size() > 0) {
             // Handle thrown away snapshots, e.g., log them or send to a dead-letter queue.
             // TODO: Should we log these? Do we even need to throw here? I imagine it'd be nice for callers to be able to handle these butttttttttttt ... will we actually have other clients?
-            throw new RuntimeException("Failed to process snapshots: " + thrownAway.size() + " snapshots were thrown away.");
+            ExampleMod.LOGGER.error("Failed to process snapshots: " + thrownAway.size() + " snapshots were thrown away.");
         }
     }
 }
