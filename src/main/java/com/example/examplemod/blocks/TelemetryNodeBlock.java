@@ -58,7 +58,7 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
     )
     {
         var msg = player.getDisplayName().getString() + " Interacted with " + state.getBlock().getName().getString() + "!";
-        System.out.println(msg);
+        ExampleMod.LOGGER.info(msg);
         player.sendSystemMessage(Component.literal(msg));
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
@@ -68,8 +68,7 @@ public class TelemetryNodeBlock extends BaseEntityBlock {
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         super.tick(state, level, pos, random);
 
-        System.out.println("Telemetry node tick. Node position: " + pos);
-
+        ExampleMod.LOGGER.info("Fetching block entity at position: {}", pos);
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof TelemetryBlockEntity telemetryNodeBlockEntity)) {
             ExampleMod.LOGGER.warn("Telemetry node at {} is missing its block entity", pos);

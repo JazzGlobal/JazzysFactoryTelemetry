@@ -77,8 +77,7 @@ public class ExampleMod {
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, TelemetryServerConfig.SERVER_CONFIG);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("REGISTRATE VALUE: " + BuiltInRegistries.BLOCK);
-
+            ExampleMod.LOGGER.debug("Example Mod Shutdown hook invoked.");
             // Ensure no telemetry tasks are left running
             if (MACHINE_SNAPSHOT_EXECUTOR != null && !MACHINE_SNAPSHOT_EXECUTOR.isShutdown()) {
                 MACHINE_SNAPSHOT_EXECUTOR.shutdownNow();
