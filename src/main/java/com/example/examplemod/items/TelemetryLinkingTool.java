@@ -27,6 +27,11 @@ public class TelemetryLinkingTool extends Item {
         ItemStack stack = context.getItemInHand();
         BlockEntity blockEntity = context.getLevel().getBlockEntity(context.getClickedPos());
         
+        // Short-circuit client-side and only perform NBT and linking logic on the server side.
+        if (context.getLevel().isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+
         // If the selected block is a TelemetryBlockEntity, store its position in the tool's NBT.
         if (blockEntity instanceof TelemetryBlockEntity telemetryBlockEntity) {
             CompoundTag tag = stack.getTagElement(SELECTED_NODE_POS_TAG);
