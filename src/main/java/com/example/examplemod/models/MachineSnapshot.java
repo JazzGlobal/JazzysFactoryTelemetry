@@ -2,8 +2,6 @@ package com.example.examplemod.models;
 
 import java.time.Instant;
 
-import lombok.ToString;
-
 public class MachineSnapshot {
     public TelemetryNode TelemetryNode;
     public String MachineId;
